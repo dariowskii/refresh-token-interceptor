@@ -14,12 +14,34 @@ class RefreshTokenInterceptor extends Interceptor {
 
   @override
   Future<void> onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     switch (options.path) {
       case '/refresh-token':
         return handler.next(options);
     }
 
+    _addTokenIfNeeded(options, handler);
+  }
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    if (err.response?.statusCode != 403 ||
+        err.requestOptions.path == '/refresh-token') {
+      return handler.next(err);
+    }
+
+    _refreshTokenAndResolveError(err, handler);
+  }
+
+  void _addTokenIfNeeded(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (options.headers.containsKey('Authorization')) {
       return handler.next(options);
     }
@@ -31,17 +53,13 @@ class RefreshTokenInterceptor extends Interceptor {
       options.headers['Authorization'] = 'Bearer $userToken';
     }
 
-    return handler.next(options);
+    handler.next(options);
   }
 
-  @override
-  Future<void> onError(
-      DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode != 403 ||
-        err.requestOptions.path == '/refresh-token') {
-      return handler.next(err);
-    }
-
+  void _refreshTokenAndResolveError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     print('### Refreshing token... ###');
 
     final prefs = await SharedPreferences.getInstance();
@@ -58,6 +76,9 @@ class RefreshTokenInterceptor extends Interceptor {
       authResponse = await authRepository.refreshToken(
         TokenRequest(token: refreshToken),
       );
+    } on DioException catch (e) {
+      // Sign out the user
+      return handler.next(e);
     } catch (e) {
       // Sign out the user
       return handler.next(err);
