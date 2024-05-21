@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:refresh_token_interceptor/auth_repository/auth_repository.dart';
 import 'package:refresh_token_interceptor/models.dart';
 import 'package:refresh_token_interceptor/refresh_token_interceptor.dart';
+import 'package:refresh_token_interceptor/utils/base_mixin.dart';
 import 'package:refresh_token_interceptor/utils/local_data.dart';
+import 'package:refresh_token_interceptor/widgets/home_body.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,7 +14,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with BaseMixin {
   late final Dio httpClient;
   late final AuthRepository authRepository;
 
@@ -22,10 +24,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    _initScreen();
+    _initClient();
   }
 
-  void _initScreen() {
+  void _initClient() {
     httpClient = Dio();
     httpClient.options.baseUrl = 'https://refresh-token-interceptor.glitch.me/';
     httpClient.interceptors.add(
@@ -52,14 +54,9 @@ class _HomePageState extends State<HomePage> {
       final authResponse = await authRepository.login(userAuthRequest);
 
       await LocalData.instance.saveToken(authResponse);
-
-      if (!mounted) return;
-
-      _showSnackBar('Logged in as "user"!');
+      showSnackBar('Logged in as "user"!');
     } catch (e) {
-      if (!mounted) return;
-
-      _showSnackBar('Error: $e');
+      showSnackBar('Error: $e');
     } finally {
       _toggleLoading();
     }
@@ -73,20 +70,17 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
 
-      _showSnackBar('Home data: ${homeResponse.data}');
+      showSnackBar('Home data: ${homeResponse.data}');
     } on DioException catch (error) {
-      if (!mounted) return;
-
       if (error.response?.statusCode == 401) {
-        _showSnackBar('Unauthorized! Please login again.');
+        await LocalData.instance.clearToken();
+        showSnackBar('Unauthorized! Please login again.');
         return;
       }
 
-      _showSnackBar('Error: ${error.message}');
+      showSnackBar('Error: ${error.message}');
     } catch (e) {
-      if (!mounted) return;
-
-      _showSnackBar('Error: $e');
+      showSnackBar('Error: $e');
     } finally {
       _toggleLoading();
     }
@@ -99,9 +93,7 @@ class _HomePageState extends State<HomePage> {
       await authRepository.logout();
       await LocalData.instance.clearToken();
 
-      if (!mounted) return;
-
-      _showSnackBar('Logged out!');
+      showSnackBar('Logged out!');
     } catch (e) {
       if (!mounted) return;
 
@@ -116,19 +108,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _toggleLoading() {
-    if (mounted) {
-      setState(() {
-        _isLoading = !_isLoading;
-      });
-    }
-  }
+    if (!mounted) return;
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+    setState(() {
+      _isLoading = !_isLoading;
+    });
   }
 
   @override
@@ -138,30 +122,11 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Refresh Token'),
       ),
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              ElevatedButton(
-                onPressed: !_isLoading ? _login : null,
-                child: const Text('Login with username "user"'),
-              ),
-              ElevatedButton(
-                onPressed: !_isLoading ? _getHomeData : null,
-                child: const Text('Get Home data'),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: !_isLoading ? _logout : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Logout'),
-              ),
-            ],
-          ),
+        child: HomeBody(
+          onLogin: _login,
+          onGetHomeData: _getHomeData,
+          onLogout: _logout,
+          isLoading: _isLoading,
         ),
       ),
     );
