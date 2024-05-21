@@ -40,12 +40,15 @@ dependencies:
   logger: any
   json_annotation: ^4.8.1
   shared_preferences: ^2.2.3
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   retrofit_generator: '>=7.0.0 <8.0.0'
-  build_runner: '>=2.3.0 <4.0.0'
+  build_runner: ^2.4.10
   json_serializable: ^6.6.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -54,6 +57,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
+  riverpod_generator: ^2.4.0
+  custom_lint: ^0.6.4
+  riverpod_lint: ^2.3.10
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -29,3 +29,5 @@ linter:
 analyzer:
   exclude:
     - '**.g.dart'
+  plugins:
+    - custom_lint
