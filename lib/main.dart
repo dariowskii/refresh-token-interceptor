@@ -73,19 +73,11 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logged in as "user"!'),
-        ),
-      );
+      _showSnackBar('Logged in as "user"!');
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-        ),
-      );
+      _showSnackBar('Error: $e');
     }
   }
 
@@ -95,11 +87,34 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Home data: ${homeResponse.data}'),
-        ),
-      );
+      _showSnackBar('Home data: ${homeResponse.data}');
+    } on DioException catch (error) {
+      if (!mounted) return;
+
+      if (error.response?.statusCode == 401) {
+        _showSnackBar('Unauthorized! Please login again.');
+        return;
+      }
+
+      _showSnackBar('Error: ${error.message}');
+    } catch (e) {
+      if (!mounted) return;
+
+      _showSnackBar('Error: $e');
+    }
+  }
+
+  void _logout() async {
+    try {
+      await authRepository.logout();
+
+      final prefs = await SharedPreferences.getInstance();
+      prefs.remove('authToken');
+      prefs.remove('refreshToken');
+
+      if (!mounted) return;
+
+      _showSnackBar('Logged out!');
     } catch (e) {
       if (!mounted) return;
 
@@ -111,25 +126,45 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Refresh Token'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('Login with username "user"'),
-            ),
-            ElevatedButton(
-              onPressed: _getHomeData,
-              child: const Text('Get Home data'),
-            ),
-          ],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(),
+              ElevatedButton(
+                onPressed: _login,
+                child: const Text('Login with username "user"'),
+              ),
+              ElevatedButton(
+                onPressed: _getHomeData,
+                child: const Text('Get Home data'),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: _logout,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
         ),
       ),
     );
