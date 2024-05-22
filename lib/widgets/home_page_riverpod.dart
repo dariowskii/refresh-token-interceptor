@@ -35,9 +35,6 @@ class _HomePageRiverpodState extends ConsumerState<HomePageRiverpod>
       toggleLoading();
 
       final data = await ref.read(authControllerProvider.notifier).getHome();
-
-      if (!mounted) return;
-
       showSnackBar('Home data: $data');
     } on DioException catch (error) {
       if (error.response?.statusCode == 401) {

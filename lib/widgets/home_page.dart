@@ -67,9 +67,6 @@ class _HomePageState extends State<HomePage> with BaseMixin {
       toggleLoading();
 
       final homeResponse = await authRepository.getHome();
-
-      if (!mounted) return;
-
       showSnackBar('Home data: ${homeResponse.data}');
     } on DioException catch (error) {
       if (error.response?.statusCode == 401) {
