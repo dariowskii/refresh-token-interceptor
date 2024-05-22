@@ -38,18 +38,20 @@ dependencies:
   dio: ^5.4.3+1
   retrofit: ^4.1.0
   logger: any
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
   shared_preferences: ^2.2.3
   riverpod: ^2.5.1
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
+  freezed: ^2.5.2
+  freezed_annotation: ^2.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   retrofit_generator: '>=7.0.0 <8.0.0'
   build_runner: ^2.4.10
-  json_serializable: ^6.6.2
+  json_serializable: ^6.8.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

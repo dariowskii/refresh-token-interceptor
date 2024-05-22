@@ -18,8 +18,6 @@ class _HomePageState extends State<HomePage> with BaseMixin {
   late final Dio httpClient;
   late final AuthRepository authRepository;
 
-  var _isLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -46,9 +44,10 @@ class _HomePageState extends State<HomePage> with BaseMixin {
     );
   }
 
-  void _login() async {
+  @override
+  void login() async {
     try {
-      _toggleLoading();
+      toggleLoading();
 
       final userAuthRequest = UserAuthRequest(username: 'user');
       final authResponse = await authRepository.login(userAuthRequest);
@@ -58,13 +57,14 @@ class _HomePageState extends State<HomePage> with BaseMixin {
     } catch (e) {
       showSnackBar('Error: $e');
     } finally {
-      _toggleLoading();
+      toggleLoading();
     }
   }
 
-  void _getHomeData() async {
+  @override
+  void getHomeData() async {
     try {
-      _toggleLoading();
+      toggleLoading();
 
       final homeResponse = await authRepository.getHome();
 
@@ -82,37 +82,24 @@ class _HomePageState extends State<HomePage> with BaseMixin {
     } catch (e) {
       showSnackBar('Error: $e');
     } finally {
-      _toggleLoading();
+      toggleLoading();
     }
   }
 
-  void _logout() async {
+  @override
+  void logout() async {
     try {
-      _toggleLoading();
+      toggleLoading();
 
       await authRepository.logout();
       await LocalData.instance.clearToken();
 
       showSnackBar('Logged out!');
     } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-        ),
-      );
+      showSnackBar('Error: $e');
     } finally {
-      _toggleLoading();
+      toggleLoading();
     }
-  }
-
-  void _toggleLoading() {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = !_isLoading;
-    });
   }
 
   @override
@@ -123,10 +110,10 @@ class _HomePageState extends State<HomePage> with BaseMixin {
       ),
       body: SafeArea(
         child: HomeBody(
-          onLogin: _login,
-          onGetHomeData: _getHomeData,
-          onLogout: _logout,
-          isLoading: _isLoading,
+          onLogin: login,
+          onGetHomeData: getHomeData,
+          onLogout: logout,
+          isLoading: isLoading,
         ),
       ),
     );

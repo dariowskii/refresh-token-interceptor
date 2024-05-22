@@ -1,16 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:refresh_token_interceptor/auth_repository/auth_repository.dart';
-import 'package:refresh_token_interceptor/models.dart';
-import 'package:refresh_token_interceptor/utils/local_data.dart';
+import 'package:refresh_token_interceptor/riverpod/auth_controller/auth_controller.dart';
+import 'package:refresh_token_interceptor/riverpod/http_client/http_client.dart';
 
-class RefreshTokenInterceptor extends Interceptor {
+class RefreshTokenRiverpodInterceptor extends Interceptor {
   final Dio client;
-  final AuthRepository authRepository;
+  final HttpClientRef ref;
 
-  RefreshTokenInterceptor({
+  RefreshTokenRiverpodInterceptor(
+    this.ref, {
     required this.client,
-    required this.authRepository,
   });
 
   @override
@@ -47,7 +46,12 @@ class RefreshTokenInterceptor extends Interceptor {
       return handler.next(options);
     }
 
-    final userToken = await LocalData.instance.authToken;
+    final userToken = await ref.read(
+      authControllerProvider.selectAsync(
+        (user) => user?.token,
+      ),
+    );
+
     if (userToken != null && userToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $userToken';
     }
@@ -60,30 +64,30 @@ class RefreshTokenInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     _debugPrint('### Refreshing token... ###');
-    final refreshToken = await LocalData.instance.refreshToken;
-
-    if (refreshToken == null) {
-      return handler.next(err);
-    }
-
-    late final UserAuthResponse authResponse;
 
     try {
-      authResponse = await authRepository.refreshToken(
-        TokenRequest(token: refreshToken),
-      );
-    } on DioException catch (e) {
-      return handler.next(e);
+      await ref.read(authControllerProvider.notifier).refreshToken();
     } catch (e) {
+      if (e is DioException) {
+        return handler.next(e);
+      }
+
       return handler.next(err);
     }
 
     _debugPrint('### Token refreshed! ###');
 
-    await LocalData.instance.saveToken(authResponse);
+    final token = await ref.read(
+      authControllerProvider.selectAsync(
+        (user) => user?.token,
+      ),
+    );
 
-    err.requestOptions.headers['Authorization'] =
-        'Bearer ${authResponse.token}';
+    if (token == null || token.isEmpty) {
+      return handler.next(err);
+    }
+
+    err.requestOptions.headers['Authorization'] = 'Bearer $token';
     return handler.resolve(await client.fetch(err.requestOptions));
   }
 

@@ -1,4 +1,5 @@
 import 'package:refresh_token_interceptor/models.dart';
+import 'package:refresh_token_interceptor/riverpod/user_auth/user_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const kAuthTokenKey = 'authToken';
@@ -26,6 +27,15 @@ class LocalData {
     await Future.wait([
       prefs.setString(kAuthTokenKey, response.token),
       prefs.setString(kRefreshTokenKey, response.refreshToken)
+    ]);
+  }
+
+  Future<void> saveTokenFromAuth(UserAuth auth) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await Future.wait([
+      prefs.setString(kAuthTokenKey, auth.token),
+      prefs.setString(kRefreshTokenKey, auth.refreshToken)
     ]);
   }
 
