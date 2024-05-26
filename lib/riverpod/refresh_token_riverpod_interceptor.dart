@@ -17,11 +17,6 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    switch (options.path) {
-      case '/refresh-token':
-        return handler.next(options);
-    }
-
     _addTokenIfNeeded(options, handler);
   }
 
@@ -46,11 +41,7 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
       return handler.next(options);
     }
 
-    final userToken = await ref.read(
-      authControllerProvider.selectAsync(
-        (user) => user?.token,
-      ),
-    );
+    final userToken = await _getToken();
 
     if (userToken != null && userToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $userToken';
@@ -77,11 +68,7 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
 
     _debugPrint('### Token refreshed! ###');
 
-    final token = await ref.read(
-      authControllerProvider.selectAsync(
-        (user) => user?.token,
-      ),
-    );
+    final token = await _getToken();
 
     if (token == null || token.isEmpty) {
       return handler.next(err);
@@ -95,5 +82,13 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     if (kDebugMode) {
       print(message);
     }
+  }
+
+  Future<String?> _getToken() async {
+    return await ref.read(
+      authControllerProvider.selectAsync(
+        (user) => user?.token,
+      ),
+    );
   }
 }

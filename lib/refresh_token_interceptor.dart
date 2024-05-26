@@ -18,11 +18,6 @@ class RefreshTokenInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    switch (options.path) {
-      case '/refresh-token':
-        return handler.next(options);
-    }
-
     _addTokenIfNeeded(options, handler);
   }
 
