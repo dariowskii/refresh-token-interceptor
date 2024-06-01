@@ -1,5 +1,5 @@
 import 'package:refresh_token_interceptor/models.dart';
-import 'package:refresh_token_interceptor/riverpod/auth_repository/auth_repository.dart';
+import 'package:refresh_token_interceptor/riverpod/auth_repository_provider/auth_repository_provider.dart';
 import 'package:refresh_token_interceptor/riverpod/user_auth/user_auth.dart';
 import 'package:refresh_token_interceptor/utils/local_data.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
