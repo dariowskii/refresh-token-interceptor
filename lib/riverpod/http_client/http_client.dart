@@ -15,12 +15,7 @@ Dio httpClient(HttpClientRef ref) {
     ),
   );
 
-  dio.interceptors.add(
-    RefreshTokenRiverpodInterceptor(
-      ref,
-      client: dio,
-    ),
-  );
+  dio.interceptors.add(RefreshTokenRiverpodInterceptor(ref));
 
   return dio;
 }
