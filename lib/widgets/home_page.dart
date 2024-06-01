@@ -38,7 +38,6 @@ class _HomePageState extends State<HomePage> with BaseMixin {
     authRepository = AuthRepository(httpClient);
     httpClient.interceptors.add(
       RefreshTokenInterceptor(
-        client: httpClient,
         authRepository: authRepository,
       ),
     );
@@ -55,7 +54,7 @@ class _HomePageState extends State<HomePage> with BaseMixin {
       await LocalData.instance.saveToken(authResponse);
       showSnackBar('Logged in as "user"!');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }
@@ -68,16 +67,8 @@ class _HomePageState extends State<HomePage> with BaseMixin {
 
       final homeResponse = await authRepository.getHome();
       showSnackBar('Home data: ${homeResponse.data}');
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 401) {
-        await LocalData.instance.clearToken();
-        showSnackBar('Unauthorized! Please login again.');
-        return;
-      }
-
-      showSnackBar('Error: ${error.message}');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }
@@ -93,7 +84,7 @@ class _HomePageState extends State<HomePage> with BaseMixin {
 
       showSnackBar('Logged out!');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:refresh_token_interceptor/riverpod/auth_controller/auth_controller.dart';
@@ -23,7 +22,7 @@ class _HomePageRiverpodState extends ConsumerState<HomePageRiverpod>
       await ref.read(authControllerProvider.notifier).login('user');
       showSnackBar('Logged in as "user"!');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }
@@ -36,16 +35,8 @@ class _HomePageRiverpodState extends ConsumerState<HomePageRiverpod>
 
       final data = await ref.read(authControllerProvider.notifier).getHome();
       showSnackBar('Home data: $data');
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 401) {
-        ref.read(authControllerProvider.notifier).setAuth(null);
-        showSnackBar('Unauthorized! Please login again.');
-        return;
-      }
-
-      showSnackBar('Error: ${error.message}');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }
@@ -59,7 +50,7 @@ class _HomePageRiverpodState extends ConsumerState<HomePageRiverpod>
       await ref.read(authControllerProvider.notifier).logout();
       showSnackBar('Logged out!');
     } catch (e) {
-      showSnackBar('Error: $e');
+      handleNetworkError(e);
     } finally {
       toggleLoading();
     }
