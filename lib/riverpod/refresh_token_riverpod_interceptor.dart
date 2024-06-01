@@ -4,13 +4,9 @@ import 'package:refresh_token_interceptor/riverpod/auth_controller/auth_controll
 import 'package:refresh_token_interceptor/riverpod/http_client/http_client.dart';
 
 class RefreshTokenRiverpodInterceptor extends Interceptor {
-  final Dio client;
   final HttpClientRef ref;
 
-  RefreshTokenRiverpodInterceptor(
-    this.ref, {
-    required this.client,
-  });
+  RefreshTokenRiverpodInterceptor(this.ref);
 
   @override
   Future<void> onRequest(
@@ -25,14 +21,17 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode != 403 ||
-        err.requestOptions.path == '/refresh-token') {
+    if (err.response?.statusCode != 403) {
       return handler.next(err);
     }
 
     _refreshTokenAndResolveError(err, handler);
   }
 
+  /// Adds the user token to the request headers if it's not already there.
+  /// If the token is not present, the request will be sent without it.
+  ///
+  /// If the token is present, it will be added to the headers.
   void _addTokenIfNeeded(
     RequestOptions options,
     RequestInterceptorHandler handler,
@@ -50,6 +49,8 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     handler.next(options);
   }
 
+  /// Refreshes the user token and retries the request.
+  /// If the token refresh fails, the error will be passed to the next interceptor.
   void _refreshTokenAndResolveError(
     DioException err,
     ErrorInterceptorHandler handler,
@@ -59,6 +60,8 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     try {
       await ref.read(authControllerProvider.notifier).refreshToken();
     } catch (e) {
+      ref.read(authControllerProvider.notifier).setAuth(null);
+
       if (e is DioException) {
         return handler.next(e);
       }
@@ -75,7 +78,9 @@ class RefreshTokenRiverpodInterceptor extends Interceptor {
     }
 
     err.requestOptions.headers['Authorization'] = 'Bearer $token';
-    return handler.resolve(await client.fetch(err.requestOptions));
+
+    final refreshResponse = await Dio().fetch(err.requestOptions);
+    return handler.resolve(refreshResponse);
   }
 
   void _debugPrint(String message) {

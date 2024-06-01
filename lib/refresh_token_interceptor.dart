@@ -5,11 +5,9 @@ import 'package:refresh_token_interceptor/models.dart';
 import 'package:refresh_token_interceptor/utils/local_data.dart';
 
 class RefreshTokenInterceptor extends Interceptor {
-  final Dio client;
   final AuthRepository authRepository;
 
   RefreshTokenInterceptor({
-    required this.client,
     required this.authRepository,
   });
 
@@ -26,14 +24,17 @@ class RefreshTokenInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode != 403 ||
-        err.requestOptions.path == '/refresh-token') {
+    if (err.response?.statusCode != 403) {
       return handler.next(err);
     }
 
     _refreshTokenAndResolveError(err, handler);
   }
 
+  /// Adds the user token to the request headers if it's not already there.
+  /// If the token is not present, the request will be sent without it.
+  ///
+  /// If the token is present, it will be added to the headers.
   void _addTokenIfNeeded(
     RequestOptions options,
     RequestInterceptorHandler handler,
@@ -50,6 +51,8 @@ class RefreshTokenInterceptor extends Interceptor {
     handler.next(options);
   }
 
+  /// Refreshes the user token and retries the request.
+  /// If the token refresh fails, the error will be passed to the next interceptor.
   void _refreshTokenAndResolveError(
     DioException err,
     ErrorInterceptorHandler handler,
@@ -67,9 +70,13 @@ class RefreshTokenInterceptor extends Interceptor {
       authResponse = await authRepository.refreshToken(
         TokenRequest(token: refreshToken),
       );
-    } on DioException catch (e) {
-      return handler.next(e);
     } catch (e) {
+      await LocalData.instance.clearToken();
+
+      if (e is DioException) {
+        return handler.next(e);
+      }
+
       return handler.next(err);
     }
 
@@ -79,7 +86,9 @@ class RefreshTokenInterceptor extends Interceptor {
 
     err.requestOptions.headers['Authorization'] =
         'Bearer ${authResponse.token}';
-    return handler.resolve(await client.fetch(err.requestOptions));
+
+    final refreshResponse = await Dio().fetch(err.requestOptions);
+    return handler.resolve(refreshResponse);
   }
 
   void _debugPrint(String message) {
